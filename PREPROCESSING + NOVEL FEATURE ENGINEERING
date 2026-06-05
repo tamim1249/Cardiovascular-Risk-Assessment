@@ -1,0 +1,123 @@
+ STEP 3: PREPROCESSING + NOVEL FEATURE ENGINEERING
+# ============================================================
+print("\n" + "=" * 65)
+print("STEP 3: PREPROCESSING + FEATURE ENGINEERING")
+print("=" * 65)
+
+df = data.copy()
+df = df.drop_duplicates()
+print(f"After removing duplicates: {df.shape[0]:,} rows")
+
+# Encode target
+df['Heart_Disease'] = df['Heart_Disease'].map({'Yes': 1, 'No': 0})
+
+# Diabetes encoding
+diabetes_mapping = {
+    'No': 0,
+    'No, pre-diabetes or borderline diabetes': 0,
+    'Yes, but female told only during pregnancy': 1,
+    'Yes': 1
+}
+df['Diabetes'] = df['Diabetes'].map(diabetes_mapping)
+
+# Binary columns
+binary_cols = ['Skin_Cancer', 'Other_Cancer', 'Depression', 'Arthritis',
+               'Smoking_History', 'Exercise']
+for col in binary_cols:
+    df[col] = df[col].map({'Yes': 1, 'No': 0})
+
+# Sex one-hot
+df = pd.get_dummies(df, columns=['Sex'], drop_first=True)
+
+# Ordinal encodings
+gh_map = {'Poor': 0, 'Fair': 1, 'Good': 2, 'Very Good': 3, 'Excellent': 4}
+df['General_Health'] = df['General_Health'].map(gh_map)
+
+checkup_map = {'Never': 0, '5 or more years ago': 0.2,
+               'Within the past 5 years': 1, 'Within the past 2 years': 2,
+               'Within the past year': 4}
+df['Checkup'] = df['Checkup'].map(checkup_map)
+
+age_map = {'18-24': 0, '25-29': 1, '30-34': 2, '35-39': 3, '40-44': 4,
+           '45-49': 5, '50-54': 6, '55-59': 7, '60-64': 8, '65-69': 9,
+           '70-74': 10, '75-79': 11, '80+': 12}
+df['Age_Category'] = df['Age_Category'].map(age_map)
+
+# BMI Category
+df['BMI_Category'] = pd.cut(df['BMI'], bins=[0, 18.5, 24.9, 29.9, np.inf],
+                             labels=[0, 1, 2, 3]).astype(int)
+
+# NOVEL FEATURES
+print("\n🔬 Engineering novel features...")
+
+df['Cardiometabolic_Risk_Index'] = (
+    df['BMI'] * 0.3 + df['Age_Category'] * 0.4 +
+    df['Diabetes'] * 2.0 + df['Smoking_History'] * 1.5
+)
+
+df['Lifestyle_Quality_Score'] = (
+    df['Exercise'] * 2.0 + df['Fruit_Consumption'] / 10 +
+    df['Green_Vegetables_Consumption'] / 10 - df['Smoking_History'] * 2.0 -
+    df['Alcohol_Consumption'] / 10 - df['FriedPotato_Consumption'] / 10
+)
+
+df['Healthy_Diet_Score'] = (
+    df['Fruit_Consumption'] / 10 + df['Green_Vegetables_Consumption'] / 10 -
+    df['FriedPotato_Consumption'] / 10
+)
+
+df['Comorbidity_Burden'] = (
+    df['Skin_Cancer'] + df['Other_Cancer'] + df['Depression'] +
+    df['Diabetes'] + df['Arthritis']
+)
+
+df['Preventive_Care_Score'] = df['Checkup'] * (df['Exercise'] + 1)
+df['Age_BMI_Interaction'] = df['Age_Category'] * df['BMI']
+df['Metabolic_Stress'] = df['BMI'] * (1 + df['Diabetes']) * (1 + df['Smoking_History'])
+df['Sociobehavioral_Risk'] = (
+    df['Depression'] * 1.5 + df['Smoking_History'] * 2.0 +
+    df['Alcohol_Consumption'] / 15
+)
+df['HealthAge_Interaction'] = df['General_Health'] * df['Age_Category']
+
+print(f"✅ Novel features engineered. Total features: {df.shape[1]}")
+novel_features = ['Cardiometabolic_Risk_Index', 'Lifestyle_Quality_Score',
+                  'Healthy_Diet_Score', 'Comorbidity_Burden', 'Preventive_Care_Score',
+                  'Age_BMI_Interaction', 'Metabolic_Stress', 'Sociobehavioral_Risk',
+                  'HealthAge_Interaction']
+
+
+# ── 3.8 FIGURE 2: Novel Feature Distributions ──
+fig, axes = plt.subplots(3, 3, figsize=(18, 13))
+fig.suptitle('Figure 2: Novel Engineered Features by Heart Disease Status',
+             fontsize=16, fontweight='bold')
+axes = axes.flatten()
+
+for i, feat in enumerate(novel_features):
+    ax = axes[i]
+    for hd_val, color, label in zip([0, 1], ['#2ecc71', '#e74c3c'], ['No HD', 'Heart Disease']):
+        subset = df[df['Heart_Disease'] == hd_val][feat]
+        ax.hist(subset, bins=35, alpha=0.6, color=color, label=label, density=True)
+    ax.set_title(f'({chr(97+i)}) {feat.replace("_", " ")}')
+    ax.set_ylabel('Density')
+    ax.legend(fontsize=9)
+
+plt.tight_layout()
+plt.savefig('fig2_novel_features.png', dpi=150, bbox_inches='tight')
+plt.show()
+print("✅ Figure 2 saved.")
+
+
+# ── 3.9 Correlation Heatmap ──
+plt.figure(figsize=(20, 16))
+numeric_df = df.select_dtypes(include=[np.number])
+corr = numeric_df.corr()
+mask = np.triu(np.ones_like(corr, dtype=bool))
+sns.heatmap(corr, mask=mask, cmap='coolwarm', center=0,
+            annot=True, fmt='.2f', annot_kws={'size': 7},
+            linewidths=0.3, vmin=-1, vmax=1)
+plt.title('Figure 3: Full Feature Correlation Heatmap', fontsize=16, fontweight='bold')
+plt.tight_layout()
+plt.savefig('fig3_correlation_heatmap.png', dpi=150, bbox_inches='tight')
+plt.show()
+print("✅ Figure 3 saved.")
