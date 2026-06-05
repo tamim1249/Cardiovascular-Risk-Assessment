@@ -1,0 +1,78 @@
+ STEP 11: SHAP ANALYSIS
+# ============================================================
+print("\n" + "=" * 65)
+print("STEP 11: EXPLAINABLE AI — SHAP ANALYSIS")
+print("=" * 65)
+
+shap_model = models['XGBoost']
+explainer = shap.TreeExplainer(shap_model)
+
+X_shap = X_test_sc.copy()
+shap_values = explainer.shap_values(X_shap)
+
+print(f"✅ SHAP values computed for {X_shap.shape[0]:,} test samples.")
+
+# FIGURE 8a
+plt.figure(figsize=(12, 9))
+shap.summary_plot(shap_values, X_shap, plot_type='dot',
+                  max_display=20, show=False)
+plt.title('Figure 8a: SHAP Summary Plot (XGBoost — Top 20 Features)',
+          fontsize=14, fontweight='bold')
+plt.tight_layout()
+plt.savefig('fig8a_shap_summary.png', dpi=150, bbox_inches='tight')
+plt.show()
+print("✅ Figure 8a saved.")
+
+# FIGURE 8b
+plt.figure(figsize=(12, 9))
+shap.summary_plot(shap_values, X_shap, plot_type='bar',
+                  max_display=20, show=False)
+plt.title('Figure 8b: SHAP Feature Importance (Mean |SHAP| Value)',
+          fontsize=14, fontweight='bold')
+plt.tight_layout()
+plt.savefig('fig8b_shap_bar.png', dpi=150, bbox_inches='tight')
+plt.show()
+print("✅ Figure 8b saved.")
+
+# FIGURE 8c
+top3_shap_feats = pd.Series(
+    np.abs(shap_values).mean(0), index=X.columns
+).sort_values(ascending=False).head(3).index.tolist()
+
+fig, axes = plt.subplots(1, 3, figsize=(18, 5))
+fig.suptitle('Figure 8c: SHAP Dependence Plots — Top 3 Features',
+             fontsize=14, fontweight='bold')
+
+for ax, feat in zip(axes, top3_shap_feats):
+    feat_idx = list(X.columns).index(feat)
+    shap.dependence_plot(feat_idx, shap_values, X_shap,
+                         ax=ax, show=False, dot_size=8, alpha=0.5)
+    ax.set_title(feat.replace('_', ' '), fontsize=11)
+
+plt.tight_layout()
+plt.savefig('fig8c_shap_dependence.png', dpi=150, bbox_inches='tight')
+plt.show()
+print("✅ Figure 8c saved.")
+
+# FIGURE 8d
+print("\nGenerating individual patient explanations (SHAP Waterfall)...")
+shap_exp = explainer(X_shap)
+
+fig, axes = plt.subplots(1, 2, figsize=(18, 7))
+fig.suptitle('Figure 8d: SHAP Waterfall — Individual Patient Explanation',
+             fontsize=14, fontweight='bold')
+
+hd_idx = np.where(shap_model.predict(X_shap) == 1)[0][0]
+plt.sca(axes[0])
+shap.plots.waterfall(shap_exp[hd_idx], max_display=12, show=False)
+axes[0].set_title('High-Risk Patient', fontsize=12, fontweight='bold')
+
+no_hd_idx = np.where(shap_model.predict(X_shap) == 0)[0][0]
+plt.sca(axes[1])
+shap.plots.waterfall(shap_exp[no_hd_idx], max_display=12, show=False)
+axes[1].set_title('Low-Risk Patient', fontsize=12, fontweight='bold')
+
+plt.tight_layout()
+plt.savefig('fig8d_shap_waterfall.png', dpi=150, bbox_inches='tight')
+plt.show()
+print("✅ Figure 8d saved.")
