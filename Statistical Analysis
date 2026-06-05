@@ -1,0 +1,35 @@
+STEP 4: STATISTICAL SIGNIFICANCE TESTS
+# ============================================================
+print("\n" + "=" * 65)
+print("STEP 4: STATISTICAL SIGNIFICANCE TESTS")
+print("=" * 65)
+
+y_full = df['Heart_Disease']
+
+# Point-Biserial Correlation
+print("\n--- Point-Biserial Correlation (Top Features) ---")
+print(f"{'Feature':<40} {'r':>8} {'p-value':>12} {'Sig':>5}")
+print("-" * 68)
+
+num_features = [c for c in numeric_df.columns if c != 'Heart_Disease']
+for feat in num_features[:15]:  # Top 15 only
+    r, p = pointbiserialr(df[feat], y_full)
+    sig = '***' if p < 0.001 else ('**' if p < 0.01 else ('*' if p < 0.05 else 'ns'))
+    print(f"{feat:<40} {r:>8.4f} {p:>12.4e} {sig:>5}")
+
+# Mann-Whitney U Test
+print("\n--- Mann-Whitney U Test (Key Features) ---")
+print(f"{'Feature':<35} {'U-stat':>10} {'p-value':>12} {'Sig':>5}")
+print("-" * 65)
+
+key_cont = ['BMI', 'Age_Category', 'Cardiometabolic_Risk_Index',
+            'Lifestyle_Quality_Score', 'Comorbidity_Burden',
+            'Metabolic_Stress', 'HealthAge_Interaction']
+for feat in key_cont:
+    g0 = df[df['Heart_Disease'] == 0][feat]
+    g1 = df[df['Heart_Disease'] == 1][feat]
+    u, p = mannwhitneyu(g0, g1, alternative='two-sided')
+    sig = '***' if p < 0.001 else ('**' if p < 0.01 else ('*' if p < 0.05 else 'ns'))
+    print(f"{feat:<35} {u:>10.1f} {p:>12.4e} {sig:>5}")
+
+print("\n* p<0.05  ** p<0.01  *** p<0.001  ns=not significant")
