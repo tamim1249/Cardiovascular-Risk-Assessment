@@ -1,0 +1,25 @@
+STEP 12: NOVEL FEATURE CONTRIBUTION
+# ============================================================
+print("\n" + "=" * 65)
+print("STEP 12: NOVEL FEATURE CONTRIBUTION ANALYSIS")
+print("=" * 65)
+
+shap_mean = pd.Series(np.abs(shap_values).mean(0), index=X.columns)
+novel_shap = shap_mean[novel_features].sort_values(ascending=True)
+all_shap_rank = shap_mean.rank(ascending=False)
+
+print("\nNovel Feature SHAP Rankings (out of all features):")
+for feat in novel_features:
+    print(f"  {feat:<40} Mean|SHAP|={shap_mean[feat]:.4f}  Rank=#{int(all_shap_rank[feat])}")
+
+fig, ax = plt.subplots(figsize=(12, 6))
+bars = novel_shap.plot(kind='barh', ax=ax, color='#9b59b6', edgecolor='black', alpha=0.85)
+ax.set_title('Figure 9: Novel Engineered Feature Contributions (Mean |SHAP|)',
+             fontsize=14, fontweight='bold')
+ax.set_xlabel('Mean |SHAP| Value')
+for i, (val, name) in enumerate(zip(novel_shap.values, novel_shap.index)):
+    rank = int(all_shap_rank[name])
+    ax.text(val + 0.0005, i, f'  #{rank}', va='center', fontsize=9, color='#2c3e50')
+plt.tight_layout()
+plt.savefig('fig9_novel_feature_shap.png', dpi=150, bbox_inches='tight')
+plt.show()
