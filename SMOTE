@@ -1,0 +1,25 @@
+STEP 5: TRAIN-TEST SPLIT + SMOTE
+# ============================================================
+print("\n" + "=" * 65)
+print("STEP 5: TRAIN-TEST SPLIT + SMOTE")
+print("=" * 65)
+
+X = df.drop(columns=['Heart_Disease'])
+y = df['Heart_Disease']
+
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=42, stratify=y)
+
+# Scale
+scaler = StandardScaler()
+X_train_sc = pd.DataFrame(scaler.fit_transform(X_train), columns=X.columns)
+X_test_sc  = pd.DataFrame(scaler.transform(X_test),  columns=X.columns)
+
+# SMOTE
+smote_tomek = SMOTETomek(random_state=42)
+X_train_res, y_train_res = smote_tomek.fit_resample(X_train_sc, y_train)
+
+print(f"Train size (original):    {X_train.shape[0]:,}")
+print(f"Train size (after SMOTE): {X_train_res.shape[0]:,}")
+print(f"Test size:                {X_test.shape[0]:,}")
+print(f"Class distribution after SMOTE:\n{pd.Series(y_train_res).value_counts()}")
