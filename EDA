@@ -1,0 +1,73 @@
+# ============================================================
+# STEP 1: LOAD DATA
+# ============================================================
+data = pd.read_csv('/kaggle/input/datasets/alphiree/cardiovascular-diseases-risk-prediction-dataset/CVD_cleaned.csv')
+print(f"\n✅ Dataset loaded: {data.shape[0]:,} rows × {data.shape[1]} columns")
+print(f"Target distribution:\n{data['Heart_Disease'].value_counts()}")
+
+
+# ============================================================
+# STEP 2: EDA — FIGURE 1
+# ============================================================
+fig, axes = plt.subplots(2, 3, figsize=(18, 11))
+fig.suptitle('Figure 1: Exploratory Data Analysis Overview', fontsize=16, fontweight='bold', y=1.01)
+
+# 2.1 Target distribution
+ax = axes[0, 0]
+vals = data['Heart_Disease'].value_counts()
+bars = ax.bar(vals.index, vals.values, color=['#2ecc71', '#e74c3c'], edgecolor='black', width=0.5)
+ax.set_title('(a) Heart Disease Distribution')
+ax.set_xlabel('Heart Disease'); ax.set_ylabel('Count')
+for bar, val in zip(bars, vals.values):
+    ax.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 200,
+            f'{val:,}\n({val/len(data)*100:.1f}%)', ha='center', fontsize=10)
+
+# 2.2 Age Category vs Heart Disease
+ax = axes[0, 1]
+age_hd = data.groupby('Age_Category')['Heart_Disease'].value_counts(normalize=True).unstack()
+age_hd['Yes'].plot(kind='bar', ax=ax, color='#e74c3c', edgecolor='black')
+ax.set_title('(b) Heart Disease Rate by Age Category')
+ax.set_xlabel('Age Category'); ax.set_ylabel('Proportion')
+ax.tick_params(axis='x', rotation=45)
+
+# 2.3 General Health vs Heart Disease
+ax = axes[0, 2]
+gh_hd = data.groupby('General_Health')['Heart_Disease'].value_counts(normalize=True).unstack()
+order = ['Poor', 'Fair', 'Good', 'Very Good', 'Excellent']
+gh_hd = gh_hd.reindex(order)
+gh_hd['Yes'].plot(kind='bar', ax=ax, color='#3498db', edgecolor='black')
+ax.set_title('(c) Heart Disease Rate by General Health')
+ax.set_xlabel('General Health'); ax.set_ylabel('Proportion')
+ax.tick_params(axis='x', rotation=30)
+
+# 2.4 BMI Distribution
+ax = axes[1, 0]
+for hd, color, label in zip(['No', 'Yes'], ['#2ecc71', '#e74c3c'], ['No HD', 'Heart Disease']):
+    subset = data[data['Heart_Disease'] == hd]['BMI']
+    ax.hist(subset, bins=40, alpha=0.6, color=color, label=label, density=True)
+ax.set_title('(d) BMI Distribution by Heart Disease')
+ax.set_xlabel('BMI'); ax.set_ylabel('Density')
+ax.legend()
+
+# 2.5 Exercise vs Heart Disease
+ax = axes[1, 1]
+ex_hd = pd.crosstab(data['Exercise'], data['Heart_Disease'], normalize='index')
+ex_hd.plot(kind='bar', ax=ax, color=['#2ecc71', '#e74c3c'], edgecolor='black')
+ax.set_title('(e) Exercise vs Heart Disease')
+ax.set_xlabel('Exercise'); ax.set_ylabel('Proportion')
+ax.tick_params(axis='x', rotation=0)
+ax.legend(['No HD', 'Heart Disease'])
+
+# 2.6 Smoking vs Heart Disease
+ax = axes[1, 2]
+sm_hd = pd.crosstab(data['Smoking_History'], data['Heart_Disease'], normalize='index')
+sm_hd.plot(kind='bar', ax=ax, color=['#2ecc71', '#e74c3c'], edgecolor='black')
+ax.set_title('(f) Smoking History vs Heart Disease')
+ax.set_xlabel('Smoking History'); ax.set_ylabel('Proportion')
+ax.tick_params(axis='x', rotation=0)
+ax.legend(['No HD', 'Heart Disease'])
+
+plt.tight_layout()
+plt.savefig('fig1_eda_overview.png', dpi=150, bbox_inches='tight')
+plt.show()
+
