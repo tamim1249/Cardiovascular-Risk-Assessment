@@ -1,0 +1,24 @@
+ STEP 10: FEATURE IMPORTANCE
+# ============================================================
+print("\n" + "=" * 65)
+print("STEP 10: FEATURE IMPORTANCE ANALYSIS")
+print("=" * 65)
+
+fig, axes = plt.subplots(1, 2, figsize=(18, 8))
+fig.suptitle('Figure 7: Feature Importance Analysis', fontsize=15, fontweight='bold')
+
+# RF feature importance
+rf_imp = pd.Series(models['Random Forest'].feature_importances_, index=X.columns).sort_values(ascending=True).tail(20)
+rf_imp.plot(kind='barh', ax=axes[0], color='#3498db', edgecolor='black', alpha=0.85)
+axes[0].set_title('(a) Random Forest — Top 20 Features')
+axes[0].set_xlabel('Importance Score')
+
+# XGBoost feature importance
+xgb_imp = pd.Series(models['XGBoost'].feature_importances_, index=X.columns).sort_values(ascending=True).tail(20)
+xgb_imp.plot(kind='barh', ax=axes[1], color='#e74c3c', edgecolor='black', alpha=0.85)
+axes[1].set_title('(b) XGBoost — Top 20 Features')
+axes[1].set_xlabel('Importance Score')
+
+plt.tight_layout()
+plt.savefig('fig7_feature_importance.png', dpi=150, bbox_inches='tight')
+plt.show()
